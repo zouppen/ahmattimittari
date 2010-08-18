@@ -10,73 +10,68 @@ import Text.Parsec.ByteString
 import qualified Data.ByteString as B
 import Parsing (perhapsParseFile)
 
-data TimeData a = TimeData UTCTime a  deriving (Show, Eq, Ord)
-
 data MeasurementOpts a = MeasurementOpts {
-      parser      :: GenParser Char () a
-    , stampFormat :: String
-    , pathSuffix  :: FilePath
+      parser      :: GenParser Char () a -- ^Parser to use to parse a single file.
+    , stampFormat :: String           -- ^Time stamp format on file name.
+    , pathSuffix  :: FilePath         -- ^Directory, where measurements are in.
+    , relaxed     :: Bool             -- ^Are we happy with Nothings if parsing fails?
 }
 
-tempOut = MeasurementOpts {
-            parser = readW1Temp
-          , stampFormat = "%FT%RZ.txt"
-          , pathSuffix = "temp-out"
-          }
+type TimeTuple a = (UTCTime,a)
 
-getTemps :: MeasurementOpts a -> FilePath -> IO [Maybe (TimeData a)]
-getTemps opts dir = do
+-- |Reads measurements from given directory with given parsers etc. If
+-- you need a more relaxed parsing, switch getMeasurementOrDie to
+-- getMeasurement.
+getMeasurements :: MeasurementOpts a -> FilePath -> IO [Maybe (TimeTuple a)]
+getMeasurements opts dir = do
   files <- getDirectoryContents fullDir
   let realFiles = filter fileEntrySieve files
-  mapM (getTempOrDie opts fullDir) realFiles
+  mapM (getMeasurement opts fullDir) realFiles
     where fullDir = concat [dir,"/",pathSuffix opts]
+
 
 -- |Filters *nix "bogus" path entries from directory listings.
 fileEntrySieve x = not $ elem x [".",".."]
 
-getTemp :: MeasurementOpts a -> FilePath -> FilePath -> IO (Maybe (TimeData a))
-getTemp opts dir f = do
+-- |Reads a single file from a given directory with given
+-- parsers. This function just picks the right function depending on
+-- given options. See getMeasurementRelaxed and getMeasurementOrDie
+-- for more information. NB: Yo dawg, I've put monad in your monad so
+-- you can return while you return!
+getMeasurement :: MeasurementOpts a        -- ^Options.
+               -> FilePath                 -- ^Directory path
+               -> FilePath                 -- ^File path
+               -> IO (Maybe (TimeTuple a)) -- ^Returns: Tuple in monads <3.
+getMeasurement o | relaxed o == True = getMeasurementRelaxed o
+                 | otherwise         = getMeasurementOrDie o
+
+-- |Quiet parser function. Doesn't fail in IO monad if parsing error,
+-- just returns Nothing. See getMeasurementRelaxed for parameter documentation.
+getMeasurementRelaxed :: MeasurementOpts a -> FilePath -> FilePath
+                      -> IO (Maybe (TimeTuple a))
+getMeasurementRelaxed opts dir f = do
   temp <- perhapsParseFile (parser opts) fullPath
-  return $ liftM2 TimeData (fileDate opts f) temp
+  return $ liftM2 timeTuple (fileDate opts f) temp
     where fullPath = concat [dir,"/",f]
 
--- |More pedant function for parsing. Fails on a single error.
-getTempOrDie :: MeasurementOpts a -> FilePath -> FilePath -> IO (Maybe (TimeData a))
-getTempOrDie opts dir f = do
+-- |More pedant function for parsing. Fails on a single error. See
+-- getMeasurementRelaxed for parameter documentation.
+getMeasurementOrDie :: MeasurementOpts a -> FilePath -> FilePath
+                    -> IO (Maybe (TimeTuple a))
+getMeasurementOrDie opts dir f = do
   temp <- perhapsParseFile (parser opts) fullPath
-  res <- liftM2 TimeData (fileDate opts f) temp
+  res <- liftM2 timeTuple (fileDate opts f) temp
   return $ Just res
     where fullPath = concat [dir,"/",f]
 
+-- |Parses given file name to get a date out of it.
 fileDate :: (Monad m) => MeasurementOpts a -> FilePath -> m UTCTime
 fileDate opts f = case parseTime defaultTimeLocale (stampFormat opts) f of
                Just a -> return a
                Nothing -> fail $ "Can not parse date from " ++ f
 
-readW1Temp :: (Read a,Floating a) => GenParser Char () a
-readW1Temp = do
-  skipBeginning
-  checkCRC
-  newline
-  skipBeginning
-  temp <- readTempText
-  newline
-  eof
-  return $ (read temp) / 1000 -- Original string is in "millicelsius" scale.
+-- |Helper function to produce (time,data) pairs. Restricted types a
+-- |bit to keep compile-time error messages helpful.
+timeTuple :: UTCTime -> a -> (UTCTime,a)
+timeTuple x y = (x,y)
 
-skipHexByte = do
-  count 2 hexDigit
-  space
-
-skipBeginning = do
-  count 9 skipHexByte
-  
-checkCRC = do
-  string ": crc="
-  count 2 hexDigit
-  space
-  string "YES" <?> "correct CRC"
-
-readTempText = do
-  string "t="
-  many1 digit

@@ -1,0 +1,10 @@
+Collects anything stored to files in a directory. Now it can do with temperatures.
+
+Simple usage:
+
+$ ghci Readers.hs Helpers.hs
+
+> :m +Data.List Helpers
+> a <- getMeasurements tempOut "/home/joell/projektit/ahma/measurements"
+> printBeautifully $ sort a
+
