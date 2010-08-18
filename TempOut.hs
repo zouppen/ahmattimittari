@@ -10,10 +10,10 @@ import Text.Parsec.ByteString
 import qualified Data.ByteString as B
 import Parsing (perhapsParseFile)
 
-data TempInfo = TempInfo UTCTime Float  deriving (Show, Eq, Ord)
+data TimeData a = TimeData UTCTime a  deriving (Show, Eq, Ord)
 
-data MeasurementOpts = MeasurementOpts {
-      parser      :: GenParser Char () Float
+data MeasurementOpts a = MeasurementOpts {
+      parser      :: GenParser Char () a
     , stampFormat :: String
     , pathSuffix  :: FilePath
 }
@@ -24,7 +24,7 @@ tempOut = MeasurementOpts {
           , pathSuffix = "temp-out"
           }
 
-getTemps :: MeasurementOpts -> FilePath -> IO [Maybe TempInfo]
+getTemps :: MeasurementOpts a -> FilePath -> IO [Maybe (TimeData a)]
 getTemps opts dir = do
   files <- getDirectoryContents fullDir
   let realFiles = filter fileEntrySieve files
@@ -34,21 +34,21 @@ getTemps opts dir = do
 -- |Filters *nix "bogus" path entries from directory listings.
 fileEntrySieve x = not $ elem x [".",".."]
 
-getTemp :: MeasurementOpts -> FilePath -> FilePath -> IO (Maybe TempInfo)
+getTemp :: MeasurementOpts a -> FilePath -> FilePath -> IO (Maybe (TimeData a))
 getTemp opts dir f = do
   temp <- perhapsParseFile (parser opts) fullPath
-  return $ liftM2 TempInfo (fileDate opts f) temp
+  return $ liftM2 TimeData (fileDate opts f) temp
     where fullPath = concat [dir,"/",f]
 
 -- |More pedant function for parsing. Fails on a single error.
-getTempOrDie :: MeasurementOpts -> FilePath -> FilePath -> IO (Maybe TempInfo)
+getTempOrDie :: MeasurementOpts a -> FilePath -> FilePath -> IO (Maybe (TimeData a))
 getTempOrDie opts dir f = do
   temp <- perhapsParseFile (parser opts) fullPath
-  res <- liftM2 TempInfo (fileDate opts f) temp
+  res <- liftM2 TimeData (fileDate opts f) temp
   return $ Just res
     where fullPath = concat [dir,"/",f]
 
-fileDate :: (Monad m) => MeasurementOpts -> FilePath -> m UTCTime
+fileDate :: (Monad m) => MeasurementOpts a -> FilePath -> m UTCTime
 fileDate opts f = case parseTime defaultTimeLocale (stampFormat opts) f of
                Just a -> return a
                Nothing -> fail $ "Can not parse date from " ++ f
