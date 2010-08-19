@@ -8,3 +8,5 @@ $ ghci Readers.hs Helpers.hs
 > a <- getMeasurements tempOut "/home/joell/projektit/ahma/measurements"
 > printBeautifully $ sort a
 
+If you don't mind some parsing errors (because of CRC errors etc.) you
+may put tempOut{relaxed=True} instead of tempOut.

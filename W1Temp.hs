@@ -31,4 +31,6 @@ checkCRC = do
 
 readTempText = do
   string "t="
-  many1 digit
+  sign <- option ' ' $ char '-'
+  number <- many1 digit
+  return (sign:number)
