@@ -1,4 +1,4 @@
-module TempOut where
+module MeasurementTools where
 
 import Control.Monad (liftM,liftM2)
 import System.Directory

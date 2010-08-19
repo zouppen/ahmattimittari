@@ -1,7 +1,7 @@
 module Readers where
 
 import W1Temp (readW1Temp)
-import TempOut
+import MeasurementTools
 
 tempOut = MeasurementOpts {
             parser = readW1Temp
