@@ -4,6 +4,7 @@ module SPITemp where
 
 import Text.Parsec.ByteString
 import Text.Parsec
+import Control.Monad (when)
 
 readBoxTemp = do
   try readSPITemp <|> readLegacyBoxTemp
@@ -28,4 +29,7 @@ readFloat = do
   b <- char '.'
   c <- many1 digit
 
-  return $ read $ sign:a++b:c
+  let floatText=sign:a++b:c
+
+  when (floatText == " 0.00") $ fail "Glitch temperature (0.00 degrees)"
+  return $ read $ floatText
