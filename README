@@ -14,3 +14,26 @@ may put tempOut{relaxed=True} instead of tempOut.
 To produce very simple output for R, this can be used:
 
 > writeFile "/home/joell/projektit/ahma/poista-out.txt"  $ unlines $ map (\(x,y) -> concat ["\"",show x,"\",",show y]) $ catMaybes $sort a
+
+Plotting with GNU R
+===================
+
+To produce output compatible with GNU R
+
+$ ghci ROutput.hs Readers.hs
+
+> :m +Readers MeasurementTool
+> convertDirToR tempOut{relaxed=True} "/home/joell/projektit/ahma/measurements" "/home/joell/projektit/ahma/tempOut.csv"
+
+To plot in R
+
+source("tempPlot.r")
+a <- read.temp("tempOut.csv")
+b <- read.temp("tempBox.csv")
+multitempplot(a,b)
+
+You can use PDF output, too. Good values are:
+
+pdf(file="tempplot.pdf",10,7)
+multitempplot(a,b)
+dev.off()
