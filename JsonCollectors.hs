@@ -25,7 +25,7 @@ measure collectors = do
   time <- jsEpoch
   -- Collects errors to a separate object to ease fetching.
   let errors = ("errors",makeObj (lefts collected))
-  return $ makeObj (("timestamp",time):errors:rights collected)
+  return.makeObj $ ("timestamp",time):errors:rights collected
 
 -- |Collects a single measurement and puts successful ones to right
 -- and errors to left.
@@ -43,5 +43,4 @@ jsEpoch :: IO JSValue
 jsEpoch = do
   raw <- epochTime
   -- Numerator makes the assumption that the denominator is one. Not very safe.
-  let unix = numerator $ realToFrac raw
-  return $ showJSON (unix::Integer)
+  return $ JSRational False $ realToFrac raw
