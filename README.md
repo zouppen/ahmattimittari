@@ -39,7 +39,7 @@ Simple usage:
 
 ```haskell
 :m +Data.List Helpers
-a <- getMeasurements tempOut "/home/joell/projektit/ahma/measurements"
+a <- getMeasurements tempOut "measurements"
 printBeautifully $ sort a
 ```
 
@@ -49,7 +49,7 @@ may put tempOut{relaxed=True} instead of tempOut.
 To produce very simple output for R, this can be used:
 
 ```haskell
-writeFile "/home/joell/projektit/ahma/poista-out.txt" $ unlines $ map (\(x,y) -> concat ["\"",show x,"\",",show y]) $ catMaybes $sort a
+writeFile "results/out.txt" $ unlines $ map (\(x,y) -> concat ["\"",show x,"\",",show y]) $ catMaybes $sort a
 ```
 
 ### Plotting with GNU R
@@ -60,8 +60,8 @@ To produce output compatible with GNU R
 
 ```haskell
 :m +Readers MeasurementTools
-convertDirToR tempOut{relaxed=True} "/home/joell/projektit/ahma/measurements" "/home/joell/projektit/ahma/tempOut.csv"
-``̀`
+convertDirToR tempOut{relaxed=True} "measurements" "results/tempOut.csv" 
+```
 
 And in GNU R:
 
