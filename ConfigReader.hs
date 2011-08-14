@@ -2,12 +2,11 @@
 module ConfigReader where
 
 import Text.Parsec.ByteString
+import Network.URI (URI,parseURI)
+import Data.Maybe (fromJust)
 import Data.Char (isSpace)
 import W1Temp (readW1Temp)
 import SPITemp (readBoxTemp)
-
---import System.IO.Unsafe (unsafePerformIO)
---debug x = unsafePerformIO (print x)
 
 pairs = [("W1",readW1Temp)
         ,("Spi",readBoxTemp)
@@ -36,11 +35,23 @@ instance Read MeasurementParser where
                          else tryParse xs
               value = dropWhile isSpace rawValue
 
-data Collector = Collector {
-    device :: FilePath          -- ^File name to parse
+-- So ugly that we need to reconsider using a custom config file.
+instance Read URI where
+  readsPrec n = (map (change parse)).(str n)
+    where 
+      str = readsPrec :: (Int -> ReadS String)
+      parse = fromJust.parseURI
+      change f (a,rest) = (f a, rest)
+
+data Config = Config { collectors  :: [Collector]
+                     , databaseURL :: URI
+                     } deriving (Read)
+
+data Collector = Collector 
+  { device :: FilePath          -- ^File name to parse
   , parser :: MeasurementParser -- ^Parser to use to parse a single file.
   , name   :: String            -- ^Name (to JSON records).
-} deriving (Read)
+  } deriving (Read)
 
-readConfigFromFile :: FilePath -> IO [Collector]
+readConfigFromFile :: FilePath -> IO Config
 readConfigFromFile f = readFile f >>= return.read

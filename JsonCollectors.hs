@@ -6,7 +6,7 @@ import ConfigReader
 import Parsing (perhapsParseFile)
 import Database.CouchDB
 import System.Posix.Time (epochTime)
-import Data.Ratio (numerator)
+import Network.URI
 
 type Entry = (String, JSValue)
 
@@ -14,8 +14,8 @@ type Entry = (String, JSValue)
 measureToDatabase :: FilePath -> IO ()
 measureToDatabase conffile = do
   conf <- readConfigFromFile conffile 
-  json <- measure conf
-  (doc,_) <- runCouchDB' $ newDoc (db "measurements") json
+  json <- measure (collectors conf)
+  (doc,_) <- runCouchDBURI (databaseURL conf) $ newDoc (db "measurements") json
   putStrLn $ "Measurement ready, id=" ++ show doc
 
 -- |Performs measurement by the instructions in config file
@@ -42,5 +42,4 @@ doParse a = do
 jsEpoch :: IO JSValue
 jsEpoch = do
   raw <- epochTime
-  -- Numerator makes the assumption that the denominator is one. Not very safe.
   return $ JSRational False $ realToFrac raw
