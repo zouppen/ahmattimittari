@@ -11,7 +11,7 @@ going to be merged somehow.
 Before compiling make sure you have patched version of CouchDB which
 supports authentication. The patch pending to mainline. Meanwhile you
 may grab the sources from
-https://zouppen@github.com/zouppen/haskell-couchdb.git .
+https://github.com/zouppen/haskell-couchdb .
 
 Compiling Ahmattimittari is very straightforward:
 
@@ -61,6 +61,7 @@ To produce output compatible with GNU R
 ```haskell
 :m +Readers MeasurementTools
 convertDirToR tempOut{relaxed=True} "/home/joell/projektit/ahma/measurements" "/home/joell/projektit/ahma/tempOut.csv"
+``̀`
 
 And in GNU R:
 
