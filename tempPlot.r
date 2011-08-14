@@ -9,7 +9,7 @@ tempplot <- function(t, main="Lämpötilakäppyrä") {
        main=main,xlab="aika",ylab="lämpötila, °C")
 }
 
-multitempplot <- function(a,b, main="Yhdistelmäkäppyrä") {
+multitempplot <- function(a,b, main="Yhdistelmäkäppyrä", colors=c("red","blue")) {
   datetimes <- c(a$datetime, b$datetime)
   values <- c(a$value, b$value)
 
@@ -17,11 +17,10 @@ multitempplot <- function(a,b, main="Yhdistelmäkäppyrä") {
        type="n", format="%d.%m.%Y",main=main,
        xlab="aika",ylab="lämpötila, °C")
   
-  lines(a$datetime, a$value, col="red")
-  lines(b$datetime, b$value, col="blue")
-
+  lines(a$datetime, a$value, col=colors[1])
+  lines(b$datetime, b$value, col=colors[2])
   
-  legend(min(datetimes),relativepos(values,0.15),c("laitetila","ulkoilma"),col=c("blue","red"),pch=3,bg="white")
+  legend(min(datetimes),relativepos(values,0.15),c("ulkoilma","laitetila"),col=colors,pch=3,bg="white")
 
 }
 
